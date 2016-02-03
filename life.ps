@@ -1,0 +1,434 @@
+%!PS-Adobe-2.0
+%%Creator: Peter Barker <pbarker-ps@barker.dropbear.id.au>
+%%Title: Life
+%%DocumentPaperSizes: Letter
+%%EndComments
+%%
+
+%        52 72 translate %offset origin by (3/4", 1")
+
+/Courier findfont 12 scalefont setfont
+
+/inches { 72 mul } bind def
+
+/paperwidth  8.5 inches def
+/paperheight  11 inches def
+
+/generations	 80	def
+/sizex		15	def
+/sizey		10	def
+
+%/cellsize	12	def
+/cellsize	6	def
+
+/min_neighs	2	def
+/max_neighs	3	def
+/breed_neighs	3	def
+
+/cellon		67     def
+/celloff	88     def
+
+
+
+/DrawGrid {
+	gsave
+	0 1 sizex {
+		dup cellsize mul
+		0
+		rmoveto
+
+		0
+		cellsize sizey mul
+		rlineto
+
+		dup cellsize mul neg
+		cellsize sizey mul neg
+		rmoveto
+
+
+		pop
+        } for
+	0 1 sizey {
+		dup cellsize mul
+		0
+		exch
+		rmoveto
+
+		0
+		cellsize sizex mul
+		exch
+		rlineto
+
+		dup cellsize mul neg
+		cellsize sizex mul neg
+		exch
+		rmoveto
+
+		pop
+                 } for
+ stroke
+
+	grestore
+} bind def
+
+
+
+/Fillcell {
+	gsave
+
+	setgray
+
+	exch
+
+	% convert cell x,y to page offset
+	cellsize mul
+	2 add
+	exch
+	cellsize mul
+	2 add
+	exch
+
+	% move there
+	rmoveto
+
+	gsave
+	0 cellsize 4 sub	rlineto
+	cellsize 4 sub 0 rlineto
+	0 cellsize 4 sub neg rlineto
+	closepath fill
+	stroke
+	grestore
+
+	grestore
+} bind def
+
+/CellOn {
+	0 Fillcell 
+} bind def
+
+/CellOff {
+	1 Fillcell 
+} bind def
+
+/NewGrid {
+	sizey array % rv
+
+        % Columns for the rows...
+
+	0 1 sizey 1 sub {
+		
+		exch
+		dup
+		3 -1 roll
+		sizex array put
+	}for
+} bind def
+
+% Define our universe
+
+
+/ZeroGrid2 {
+  0 1 sizey 1 sub {
+    0 1 sizex 1 sub {
+     dup3
+     TurnCellOff pop
+     pop %COUNTER
+    } for
+    pop %COUNTER
+  } for
+} bind def
+
+/dive2dup1ip {
+ 3 -1 roll
+ dup
+ 4 2 roll
+} bind def
+
+
+
+/SteadyState {
+  dup CountLive 0 eq
+
+  dup
+  not {
+      % look through stack to find duplicate generations?
+  }if
+} bind def
+
+
+/CountLive {
+  0 % rv
+  exch
+
+  0 1 sizey 1 sub {
+    0 1 sizex 1 sub {
+     dup3
+     IsCellOn {  4 -1 roll 1 add 4 1 roll}if
+     pop %COUNTER
+    } for
+    pop %COUNTER
+  } for
+  pop
+} bind def
+
+
+
+/TurnCellOn { % takes x,y being cell co-ord
+  dive2dup1ip
+  3 1 roll
+  get
+  exch
+  cellon
+
+%  (TurnCellOn) pstack pop
+
+  put
+} bind def
+
+/TurnCellOff { % takes x,y being cell co-ord
+  dive2dup1ip
+  3 1 roll
+  get
+  exch
+  celloff
+  put
+} bind def
+
+
+/IsCellOn {
+%(IsCellOn) pstack pop
+  3 1 roll
+  get
+
+%(IsCellOn2) pstack pop
+
+  exch
+  get
+
+  cellon
+
+  eq  
+} bind def
+
+/IsCellOff {
+  3 1 roll
+  get
+
+  exch
+  get
+
+  celloff
+  ne
+} bind def
+
+/dup2 {
+      dup
+      3 -1 roll
+      dup
+      4 -3 roll
+      exch
+} bind def
+
+/dive1dup2 {
+      3 -2 roll
+      dup2
+      5 2 roll
+} bind def
+
+/dupdive2_2 {
+      4 2 roll
+      dup2
+      6 2 roll
+} bind def
+
+
+/dup3 {
+      dup
+      4 2 roll
+      dup
+      5 2 roll
+      dup
+      6 1 roll
+      5 -1 roll
+      3 -1 roll
+
+} bind def
+
+/dive1dup3 {
+	   4 1 roll
+	   dup3
+	   7 3 roll
+} bind def
+
+/dive2exch {
+	   4 2 roll
+	   exch
+	   4 2 roll
+} bind def
+
+/dive3exch {
+	   5 3 roll
+	   exch
+	   5 -3 roll
+} bind def
+
+/NewGen {
+  NewGrid % return value
+
+  exch
+
+  0 1 sizey 1 sub { % for each row
+    0 1 sizex 1 sub { % for each cell in row
+      % if we're alive
+      dup3 IsCellOn {
+            dup3  CountNeighbours
+
+	    dive3exch
+	    dive1dup3 TurnCellOn pop
+	    dup min_neighs lt { dive1dup3 TurnCellOff pop}if
+	    dup max_neighs gt { dive1dup3 TurnCellOff pop}if
+	    dive3exch
+
+	    pop %COuntNeighbours
+      }	    {
+            dup3 CountNeighbours
+
+	    dive3exch
+	    dup breed_neighs eq { dive1dup3 TurnCellOn pop}if
+	    dive3exch
+
+	    pop %COuntNeighbours
+      }ifelse
+      pop %COUNTER
+    }for
+    pop %COUNTER
+  }for
+  pop %oldvalue
+} bind def
+
+
+/CountNeighbours { % takes X/Y
+  /tmpx exch def
+  /tmpy exch def
+  /MYROWS exch def
+
+  /tmpxmin tmpx 1 sub def
+  /tmpxmax tmpx 1 add def
+  /tmpymin tmpy 1 sub def
+  /tmpymax tmpy 1 add def
+
+  /tmpxmin tmpxmin 0 max def
+  /tmpxmax tmpxmax sizex 1 sub min def
+
+  /tmpymin tmpymin 0 max def
+  /tmpymax tmpymax sizey 1 sub min def
+
+  0 % return value :)
+
+  % count live neighbours (inc me)
+
+  tmpymin 1 tmpymax {
+    tmpxmin 1 tmpxmax {
+      MYROWS 
+      dive1dup2
+      IsCellOn { 3 -1 roll 1 add 3 1 roll }if
+      pop %COUNTER
+    }for
+    pop %COUNTER
+  }for
+
+  % remove me if required
+  MYROWS tmpy tmpx IsCellOn { 1 sub } if
+} bind def
+
+
+/DispGen {
+  0 1 sizey 1 sub {
+    0 1 sizex 1 sub {
+      dup3
+      IsCellOn { dup2 CellOn }if
+      pop %COUNTER
+    }for
+    pop %COUNTER
+  }for
+} bind def
+
+%ROWS 6 get 3 get 61 eq { (yes, true!) show }if
+
+%ROWS 1 get 1 get 1 def
+%ROWS 1 index 1 index 1 def
+
+NewGrid
+ZeroGrid2
+
+7 3 TurnCellOn
+9 3 TurnCellOn
+7 1 TurnCellOn
+9 1 TurnCellOn
+8 2 TurnCellOn
+
+3 1 TurnCellOn
+2 2 TurnCellOn
+3 3 TurnCellOn
+4 2 TurnCellOn
+
+4 8 TurnCellOn
+4 7 TurnCellOn
+3 7 TurnCellOn
+
+7 8 TurnCellOn
+7 7 TurnCellOn
+6 7 TurnCellOn
+
+/gutter 10 def
+/posy paperheight gutter sub sizey cellsize mul sub def
+/posx gutter def
+
+1 1 generations {
+
+  pop
+
+%  posx
+%  posy
+%  3 -1   roll
+  posx posy  moveto
+
+  DrawGrid
+  DispGen
+
+  SteadyState { showpage end } if
+
+  NewGen
+  /posx posx sizex cellsize mul add gutter add def
+  posx sizex cellsize mul add paperwidth gt
+  {
+    /posx gutter def
+
+    /posy posy sizey cellsize mul sub gutter sub  def
+    posy 0 lt
+    {
+	/posy paperheight gutter sub sizey cellsize mul sub def
+	showpage
+    }if
+  }if
+
+} for
+
+%DrawGrid
+%DispGrid
+
+%3 6 IsCellOn { (yes, true!) show }if
+
+
+%/AROW cells array def
+%AROW  1 65 put
+%AROW 1 get 65 eq { (yes, true!) show }if
+
+stroke
+
+pop %grid
+pstack
+
+%0 1 9 {
+% 0 CellOn
+%} for
